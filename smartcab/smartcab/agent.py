@@ -40,9 +40,9 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Update epsilon using a decay function of your choice
+        #self.epsilon = 1 - 0.05 * self.n_trials
         #self.epsilon = 1 - 0.0025 * self.n_trials         # crosses 0 after 400 trials
         #self.epsilon = 0.992 ** self.n_trials
-        #self.epsilon = math.cos ( 0.71 / 180 * self.n_trials )
         self.epsilon = math.cos ( 0.71 / 180 * self.n_trials )
 
         # Update additional class parameters as needed
@@ -84,12 +84,13 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
+        #self.maxQ = 0.0
+        #for action in self.valid_actions:
+        #    action_value = self.Q[state][action]
+        #    if action_value > self.maxQ:
+        #        self.maxQ = action_value
 
-        for action in self.valid_actions:
-            action_value = self.Q[state][action]
-            if action_value > self.maxQ:
-                self.maxQ = action_value
-
+        self.maxQ = max(self.Q[state].values())
 
         return self.maxQ
 
@@ -133,18 +134,34 @@ class LearningAgent(Agent):
         # When not learning, choose a random action
             if self.learning == False:
                 action = self.valid_actions[randint(0, 3)]  # choose random action
+                print "NOT LEARNING"
 
         # When learning, choose a random action with 'epsilon' probability
             elif self.learning == True:
-                if self.epsilon > random.random():
+                if self.epsilon > random.random() or self.Q == 0.0:
                     action = self.valid_actions[randint(0, 3)]  # choose random action
+                    #print "CHOOSE RANDOM ACTION"
 
         #   Otherwise, choose an action with the highest Q-value for the current state
                 else:
                     #print "SELECTING ACTION WITH HIGHEST Q-VALUE"
-                    action = max(self.Q[state], key=self.Q[state].get)
+                    maxQ = self.get_maxQ(state)
+                    actionlist_maxQ = []
+                    #actionlist_maxQ = [k for k, v in self.Q[state].items() if v >= ( maxQ - 0.05 * maxQ ) and v <= ( maxQ + 0.05 * maxQ )]
+                    for k, v in self.Q[state].items():
+                        #print state, "k, v = ", k, v
+                        if v == maxQ:
+                            actionlist_maxQ.append(k)
+
+                    #print "self.Q[state] = ",self.Q[state]
+                    #print "len(self.Q) = ", len(self.Q)
+                    #print "maxQ = ", maxQ
+                    #print "actionlist_maxQ = ", actionlist_maxQ
+                    action = actionlist_maxQ[randint(0, len(actionlist_maxQ)-1)]    # works only for self.maxQ dicts with at least 1 entries
+
+
  
-        return action
+        return None
 
 
     def learn(self, state, action, reward):
@@ -208,7 +225,7 @@ def run():
     # Flags:
     #   enforce_deadline - set to True to enforce a deadline metric
 
-    env.set_primary_agent(agent, enforce_deadline = True)
+    env.set_primary_agent(agent, enforce_deadline = False)
 
     ##############
     # Create the simulation
@@ -217,7 +234,7 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env, update_delay = 0.00, display = False, log_metrics = True, optimized = True)
+    sim = Simulator(env, update_delay = 0.0, display = False, log_metrics = False, optimized = False)
     
     ##############
     # Run the simulator
